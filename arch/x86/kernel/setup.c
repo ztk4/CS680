@@ -861,7 +861,14 @@ void __init setup_arch(char **cmdline_p)
 	 */
 	__flush_tlb_all();
 #else
-	printk(KERN_INFO "Command line: %s\n", boot_command_line);
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Modified:
+   * > printk(KERN_INFO "Command line: %s\n", boot_command_line);
+   * in order to annotate the printline further and add my name.
+   */
+  printk(KERN_INFO "Zachary Kaplan: setup_arch(): command_line=%s\n",
+         boot_command_line);
 #endif
 
 	/*

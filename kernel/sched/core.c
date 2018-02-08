@@ -5825,6 +5825,12 @@ void __init sched_init(void)
 	int i, j;
 	unsigned long alloc_size = 0, ptr;
 
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Add print line
+   */
+  printk(KERN_INFO "Zachary Kaplan: sched_init(void)\n");
+
 	sched_clock_init();
 	wait_bit_init();
 

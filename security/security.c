@@ -63,6 +63,12 @@ int __init security_init(void)
 	int i;
 	struct list_head *list = (struct list_head *) &security_hook_heads;
 
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Added a print line to indiciate when this function is called.
+   */
+  printk(KERN_INFO "Zachary Kaplan: security_init(void)\n");
+
 	for (i = 0; i < sizeof(security_hook_heads) / sizeof(struct list_head);
 	     i++)
 		INIT_LIST_HEAD(&list[i]);

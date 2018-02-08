@@ -55,6 +55,12 @@ EXPORT_SYMBOL_GPL(housekeeping_test_cpu);
 
 void __init housekeeping_init(void)
 {
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Add printline
+   */
+  printk(KERN_INFO "Zachary Kaplan: housekeeping_init(void)\n");
+
 	if (!housekeeping_flags)
 		return;
 

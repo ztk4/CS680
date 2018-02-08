@@ -252,6 +252,11 @@ static struct file_system_type nsfs = {
 
 void __init nsfs_init(void)
 {
+  /* CUSTOM EDIT FOR CS680
+   * Add print line.
+   */
+  printk(KERN_INFO "Zachary Kaplan: nsfs_init(void)\n");
+
 	nsfs_mnt = kern_mount(&nsfs);
 	if (IS_ERR(nsfs_mnt))
 		panic("can't set nsfs up\n");
