@@ -9,12 +9,44 @@
 #include <linux/quicklist.h>
 #include <linux/cma.h>
 
+/*
+ * CUSTOM EDIT FOR CS680
+ * Add custom function for displaying /proc/buddyinfo.
+ */
+static void show_buddyinfo(void) {
+  struct zone *zone;
+  printk("Zachary Kaplan: Custom BuddyInfo\n");
+
+  for_each_populated_zone(zone) {
+    unsigned int order;
+    unsigned long nr[MAX_ORDER], flags;
+
+    spin_lock_irqsave(&zone->lock, flags);
+    for (order = 0; order < MAX_ORDER; ++order) {
+      nr[order] = zone->free_area[order].nr_free;
+    }
+    spin_unlock_irqrestore(&zone->lock, flags);
+
+    printk("Zachary Kaplan: Node %d, zone %8s", zone_to_nid(zone), zone->name);
+    for (order = 0; order < MAX_ORDER; ++order) {
+      printk(KERN_CONT "%7lu", nr[order]);
+    }
+    printk(KERN_CONT "\n");
+  }
+}
+
 void show_mem(unsigned int filter, nodemask_t *nodemask)
 {
 	pg_data_t *pgdat;
 	unsigned long total = 0, reserved = 0, highmem = 0;
+  
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Prefix all printk's with my name.
+   * Add call to custom method above.
+   */
 
-	printk("Mem-Info:\n");
+	printk("Zachary Kaplan: Mem-Info:\n");
 	show_free_areas(filter, nodemask);
 
 	for_each_online_pgdat(pgdat) {
@@ -36,17 +68,20 @@ void show_mem(unsigned int filter, nodemask_t *nodemask)
 		pgdat_resize_unlock(pgdat, &flags);
 	}
 
-	printk("%lu pages RAM\n", total);
-	printk("%lu pages HighMem/MovableOnly\n", highmem);
-	printk("%lu pages reserved\n", reserved);
+	printk("Zachary Kaplan: %lu pages RAM\n", total);
+	printk("Zachary Kaplan: %lu pages HighMem/MovableOnly\n", highmem);
+	printk("Zachary Kaplan: %lu pages reserved\n", reserved);
 #ifdef CONFIG_CMA
-	printk("%lu pages cma reserved\n", totalcma_pages);
+	printk("Zachary Kaplan: %lu pages cma reserved\n", totalcma_pages);
 #endif
 #ifdef CONFIG_QUICKLIST
-	printk("%lu pages in pagetable cache\n",
+	printk("Zachary Kaplan: %lu pages in pagetable cache\n",
 		quicklist_total_size());
 #endif
 #ifdef CONFIG_MEMORY_FAILURE
-	printk("%lu pages hwpoisoned\n", atomic_long_read(&num_poisoned_pages));
+	printk("Zachary Kaplan: %lu pages hwpoisoned\n",
+    atomic_long_read(&num_poisoned_pages));
 #endif
+
+  show_buddyinfo();
 }

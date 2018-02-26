@@ -97,13 +97,20 @@ static atomic_t swapin_readahead_hits = ATOMIC_INIT(4);
 
 void show_swap_cache_info(void)
 {
-	printk("%lu pages in swap cache\n", total_swapcache_pages());
-	printk("Swap cache stats: add %lu, delete %lu, find %lu/%lu\n",
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Prefix all printk's with my name.
+   */
+  
+	printk("Zachary Kaplan: %lu pages in swap cache\n", total_swapcache_pages());
+	printk("Zachary Kaplan: Swap cache stats: add %lu, delete %lu,"
+    " find %lu/%lu\n",
 		swap_cache_info.add_total, swap_cache_info.del_total,
 		swap_cache_info.find_success, swap_cache_info.find_total);
-	printk("Free swap  = %ldkB\n",
+	printk("Zachary Kaplan: Free swap  = %ldkB\n",
 		get_nr_swap_pages() << (PAGE_SHIFT - 10));
-	printk("Total swap = %lukB\n", total_swap_pages << (PAGE_SHIFT - 10));
+	printk("Zachary Kaplan: Total swap = %lukB\n",
+    total_swap_pages << (PAGE_SHIFT - 10));
 }
 
 /*

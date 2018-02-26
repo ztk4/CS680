@@ -4558,7 +4558,7 @@ unsigned long nr_free_pagecache_pages(void)
 static inline void show_node(struct zone *zone)
 {
 	if (IS_ENABLED(CONFIG_NUMA))
-		printk("Node %d ", zone_to_nid(zone));
+		printk("Zachary Kaplan: Node %d ", zone_to_nid(zone));
 }
 
 long si_mem_available(void)
@@ -4716,6 +4716,11 @@ void show_free_areas(unsigned int filter, nodemask_t *nodemask)
 	struct zone *zone;
 	pg_data_t *pgdat;
 
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Prefixt all printk's with my name.
+   */
+
 	for_each_populated_zone(zone) {
 		if (show_mem_node_skip(filter, zone_to_nid(zone), nodemask))
 			continue;
@@ -4724,7 +4729,7 @@ void show_free_areas(unsigned int filter, nodemask_t *nodemask)
 			free_pcp += per_cpu_ptr(zone->pageset, cpu)->pcp.count;
 	}
 
-	printk("active_anon:%lu inactive_anon:%lu isolated_anon:%lu\n"
+	printk("Zachary Kaplan: active_anon:%lu inactive_anon:%lu isolated_anon:%lu\n"
 		" active_file:%lu inactive_file:%lu isolated_file:%lu\n"
 		" unevictable:%lu dirty:%lu writeback:%lu unstable:%lu\n"
 		" slab_reclaimable:%lu slab_unreclaimable:%lu\n"
@@ -4754,7 +4759,7 @@ void show_free_areas(unsigned int filter, nodemask_t *nodemask)
 		if (show_mem_node_skip(filter, pgdat->node_id, nodemask))
 			continue;
 
-		printk("Node %d"
+		printk("Zachary Kaplan: Node %d"
 			" active_anon:%lukB"
 			" inactive_anon:%lukB"
 			" active_file:%lukB"
@@ -4852,7 +4857,7 @@ void show_free_areas(unsigned int filter, nodemask_t *nodemask)
 			K(free_pcp),
 			K(this_cpu_read(zone->pageset->pcp.count)),
 			K(zone_page_state(zone, NR_FREE_CMA_PAGES)));
-		printk("lowmem_reserve[]:");
+		printk("Zachary Kaplan: lowmem_reserve[]:");
 		for (i = 0; i < MAX_NR_ZONES; i++)
 			printk(KERN_CONT " %ld", zone->lowmem_reserve[i]);
 		printk(KERN_CONT "\n");
@@ -4894,7 +4899,8 @@ void show_free_areas(unsigned int filter, nodemask_t *nodemask)
 
 	hugetlb_show_meminfo();
 
-	printk("%ld total pagecache pages\n", global_node_page_state(NR_FILE_PAGES));
+	printk("Zachary Kaplan: %ld total pagecache pages\n",
+    global_node_page_state(NR_FILE_PAGES));
 
 	show_swap_cache_info();
 }

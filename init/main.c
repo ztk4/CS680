@@ -393,6 +393,12 @@ static noinline void __ref rest_init(void)
 	struct task_struct *tsk;
 	int pid;
 
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Show memory stats after start_kernel but before rest_init.
+   */
+  show_mem(0, NULL);
+
 	rcu_scheduler_starting();
 	/*
 	 * We need to spawn init first so that it obtains pid 1, however
