@@ -146,6 +146,12 @@ void memcg_deactivate_kmem_caches(struct mem_cgroup *);
 void memcg_destroy_kmem_caches(struct mem_cgroup *);
 
 /*
+ * CUSTOM EDIT FOR CS680
+ * Prints info similar to /proc/slabinfo
+ */
+void print_slabinfo(void);
+
+/*
  * Please use this macro to create slab caches. Simply specify the
  * name of the structure and maybe some flags that are listed above.
  *

@@ -1555,6 +1555,83 @@ static inline bool shuffle_freelist(struct kmem_cache *s, struct page *page)
 }
 #endif /* CONFIG_SLAB_FREELIST_RANDOM */
 
+/*
+ * CUSTOM EDIT FOR CS680
+ * Helper for printing one slabinfo row. (NO SMP).
+ * NOTE: Not printing tunables because SLUB doesn't support them.
+ */
+static void print_cache_slabinfo(struct kmem_cache *s) {
+  int node;
+  struct kmem_cache_node *n;
+  struct page *page;
+  unsigned long flags;
+
+  /* Stats */
+  const char *cache_name = s->name;
+  unsigned long nr_active_obj = 0;
+  unsigned long nr_obj = 0;
+  unsigned long obj_size = s->object_size;
+  unsigned long nr_obj_per_slab = oo_objects(s->oo);
+  unsigned long nr_pg_per_slab = 1 << oo_order(s->oo);
+  /* In SLUB, active_slab == num_slab, so we only track one */
+  unsigned long nr_slab = 0;
+  /* This one is not documented, so it will just stay 0... */
+  unsigned long nr_shared_avail = 0;
+  /* Take sums accross all nodes */
+  for_each_kmem_cache_node(s, node, n) {
+    nr_slab += n->nr_partial;
+
+    /* Visit each slab on this node */
+    spin_lock_irqsave(&n->list_lock, flags);
+    list_for_each_entry(page, &n->partial, lru) {
+      nr_active_obj += page->inuse;
+      nr_obj += page->objects;
+    }
+    spin_unlock_irqrestore(&n->list_lock, flags);
+  }
+
+  printk(KERN_INFO "Zachary Kaplan: %-30s %6lu %6lu %6lu %6lu %6lu "
+                   ": slabdata %6lu %6lu %6lu\n",
+                   cache_name, nr_active_obj, nr_obj, obj_size,
+                   nr_obj_per_slab, nr_pg_per_slab,
+                   nr_slab, nr_slab, nr_shared_avail);
+}
+
+/*
+ * CUSTOM EDIT FOR CS680
+ * Implementation of print_slabinfo. (NO SMP).
+ * NOTE: Not printing tunables because SLUB doesn't support them.
+ */
+void print_slabinfo(void) {
+  /* Specially handle kmalloc caches, making sure to put them in order */
+  static int kmalloc_idx[] = { 3, 4, 5, 6, 1, 7, 2, 8, 9, 10, 11, 12, 13, 14,
+                               15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 };
+  int i;
+  struct kmem_cache *s;
+
+  printk(KERN_INFO "Zachary Kaplan: #name <active_obj> <num_obj> <objsize> "
+                   "<objperslab> <pagesperslab> : slabdata <active_slabs> "
+                   "<nums_slabs> <sharedavail>\n");
+
+  /* Generic Caches */
+  list_for_each_entry(s, &slab_caches, list) {
+      print_cache_slabinfo(s);
+  }
+
+  printk(KERN_INFO "Zachary Kaplan: kmalloc-* using kmalloc-caches:\n");
+
+  /* Kmalloc Caches (Repeated in order to use kmalloc_caches) */
+  for (i = 0; i < sizeof(kmalloc_idx)/sizeof(int); ++i) {
+    /* 
+     * Although there is support for indexes up to 26, there may be less kmalloc
+     * caches in reality
+     */
+    if (kmalloc_idx[i] > KMALLOC_SHIFT_HIGH)
+      break;
+    print_cache_slabinfo(kmalloc_caches[kmalloc_idx[i]]);
+  }
+}
+
 static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 {
 	struct page *page;
