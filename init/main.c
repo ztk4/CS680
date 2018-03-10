@@ -89,6 +89,7 @@
 #include <linux/io.h>
 #include <linux/cache.h>
 #include <linux/rodata_test.h>
+#include <linux/tty.h> /* CUSTOM EDIT FOR CS680 */
 
 #include <asm/io.h>
 #include <asm/bugs.h>
@@ -998,6 +999,74 @@ static inline void mark_readonly(void)
 }
 #endif
 
+/*
+ * CUSTOM EDIT FOR CS680
+ * Prints all tasks in a format similar to `ps -ef`.
+ */
+static void print_threadinfo(void) {
+  static const int kUidLen = 10, kTtyLen = 8;
+
+  struct task_struct *tsk;
+  char uid[kUidLen + 1];
+  pid_t pid, ppid;
+  u64 runtime;
+  u64 cpu;
+  u64 stime_ns;
+  unsigned stime_hr, stime_min;
+  char tty[kTtyLen + 1];
+  unsigned time_hr, time_min, time_sec;
+  char *cmd;
+  
+  /* Print header */
+  printk(KERN_INFO "Zachary Kaplan: %-*s %3s %5s %2s %-5s %-*s %8s %s\n",
+         kUidLen, "UID", "PID", "PPID", "C", "STIME",
+         kTtyLen, "TTY", "TIME", "CMD");
+
+  for_each_process(tsk) {
+    if (uid_eq(tsk->cred->uid, GLOBAL_ROOT_UID)) {
+      /* We know root's username. */
+      strncpy(uid, "root", kUidLen);
+    } else {
+      /* Don't know any other usersnames in kernel space, just print uid. */
+      snprintf(uid, kUidLen, "%u", from_kuid(&init_user_ns, tsk->cred->uid));
+    }
+    uid[kUidLen] = '\0';  /* Guarentee uid is null terminated. */
+
+    pid = tsk->pid;
+    ppid = tsk->real_parent->pid;
+
+    runtime = tsk->utime + tsk->stime;
+    /* Calculated as total cpu time over time since start 
+       (time since boot - real start time). */
+    cpu = runtime / (ktime_get_boot_ns() - tsk->real_start_time);
+
+    /* Get start time as wallclock ns. */
+    stime_ns = ktime_to_ns(ktime_mono_to_real(ns_to_ktime(tsk->start_time)));
+    stime_hr  = stime_ns / (NSEC_PER_SEC * 3600);
+    stime_min = stime_ns / (NSEC_PER_SEC * 60) % 60;
+
+    time_hr  = runtime / (NSEC_PER_SEC * 3600);
+    time_min = runtime / (NSEC_PER_SEC * 60) % 60;
+    time_sec = runtime / NSEC_PER_SEC % 60;
+
+    /* NOTE: This may cut off the tty name */
+    if (tsk->signal->tty) {
+      strncpy(tty, tsk->signal->tty->name, kTtyLen);
+      tty[kTtyLen] = '\0';
+    } else {
+      tty[0] = '?';
+      tty[1] = '\0';
+    }
+
+    cmd = tsk->comm;
+
+    printk(KERN_INFO "Zachary Kaplan: "
+           "%-*s %3d %5d %2llu %2u:%2u %-*s %2u:%2u:%2u %s\n",
+           kUidLen, uid, pid, ppid, cpu, stime_hr, stime_min, kTtyLen, tty,
+           time_hr, time_min, time_sec, cmd);
+  }
+}
+
 static int __ref kernel_init(void *unused)
 {
 	int ret;
@@ -1018,6 +1087,16 @@ static int __ref kernel_init(void *unused)
    * Print info somewhat like /proc/slabinfo
    */
   print_slabinfo();
+
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Print threadinfo somewhat like `ps -ef`
+   * Then try adding threads in various ways
+   * Then print threadinfo again
+   * Finally terminate new processes
+   * And print threadinfo again
+   */
+  print_threadinfo();
 
 	if (ramdisk_execute_command) {
 		ret = run_init_process(ramdisk_execute_command);
