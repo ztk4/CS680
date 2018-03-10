@@ -90,7 +90,6 @@
 #include <linux/cache.h>
 #include <linux/rodata_test.h>
 #include <linux/tty.h> /* CUSTOM EDIT FOR CS680 */
-#include <linux/sched/mm.h> /* CUSTOM EDIT FOR CS680 */
 
 #include <asm/io.h>
 #include <asm/bugs.h>
@@ -1045,8 +1044,10 @@ static void print_threadinfo(void) {
 
     real_stime = ktime_mono_to_real(ns_to_ktime(tsk->start_time));
     ts64 = ktime_to_timespec64(real_stime);
-    time64_to_tm(ts64.tv_sec, -sys_tz.tz_minuteswest, &tm);
-    stime_hr = tm.tm_hr;
+    /* NOTE: Ideally we would offset by -(sys_tz.minuteswest * 60), but at this
+             point in boot, sys_tz is not set. Therefore, output is in UTC */
+    time64_to_tm(ts64.tv_sec, 0, &tm);
+    stime_hr = tm.tm_hour;
     stime_min = tm.tm_min;
 
     time_hr  = runtime / (NSEC_PER_SEC * 3600);
