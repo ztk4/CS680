@@ -90,6 +90,7 @@
 #include <linux/cache.h>
 #include <linux/rodata_test.h>
 #include <linux/tty.h> /* CUSTOM EDIT FOR CS680 */
+#include <linux/sched/mm.h> /* CUSTOM EDIT FOR CS680 */
 
 #include <asm/io.h>
 #include <asm/bugs.h>
@@ -1011,13 +1012,12 @@ static void print_threadinfo(void) {
   pid_t pid, ppid;
   u64 runtime;
   u64 cpu;
-  u64 stime_ns;
+  ktime_t real_stime;
+  struct timespec64 ts64;
+  struct tm tm;
   unsigned stime_hr, stime_min;
   char tty[kTtyLen + 1];
   unsigned time_hr, time_min, time_sec;
-  struct mm_struct *mm;
-  size_t cmd_len = -1;
-  char *cmd = NULL;
   char comm[TASK_COMM_LEN];
   
   /* Print header */
@@ -1040,13 +1040,14 @@ static void print_threadinfo(void) {
 
     runtime = tsk->utime + tsk->stime;
     /* Calculated as total cpu time over time since start 
-       (time since boot - real start time). */
+       (time since boot - boottime start time). */
     cpu = runtime / (ktime_get_boot_ns() - tsk->real_start_time);
 
-    /* Get start time as wallclock ns. */
-    stime_ns = ktime_to_ns(ktime_mono_to_real(ns_to_ktime(tsk->start_time)));
-    stime_hr  = stime_ns / (NSEC_PER_SEC * 3600);
-    stime_min = stime_ns / (NSEC_PER_SEC * 60) % 60;
+    real_stime = ktime_mono_to_real(ns_to_ktime(tsk->start_time));
+    ts64 = ktime_to_timespec64(real_stime);
+    time64_to_tm(ts64.tv_sec, -sys_tz.tz_minuteswest, &tm);
+    stime_hr = tm.tm_hr;
+    stime_min = tm.tm_min;
 
     time_hr  = runtime / (NSEC_PER_SEC * 3600);
     time_min = runtime / (NSEC_PER_SEC * 60) % 60;
@@ -1061,26 +1062,12 @@ static void print_threadinfo(void) {
       tty[1] = '\0';
     }
 
-    mm = get_task_mm(tsk);
-    if (mm) {
-      cmd_len = mm->arg_end - mm->arg_start;
-      cmd = kmalloc(cmd_len + 1, GFP_KERNEL);
-      strlcpy(cmd, (char *) mm->arg_start, cmd_len + 1);
+    get_task_comm(comm, tsk);
 
-      printk(KERN_INFO "Zachary Kaplan: "
-             "%-*s %3d %5d %2llu %02u:%02u %-*s %02u:%02u:%02u %s\n",
-             kUidLen, uid, pid, ppid, cpu, stime_hr, stime_min, kTtyLen, tty,
-             time_hr, time_min, time_sec, cmd);
-
-      kfree(cmd);
-    } else {
-      get_task_comm(comm, tsk);
-
-      printk(KERN_INFO "Zachary Kaplan: "
-             "%-*s %3d %5d %2llu %02u:%02u %-*s %02u:%02u:%02u [%s]\n",
-             kUidLen, uid, pid, ppid, cpu, stime_hr, stime_min, kTtyLen, tty,
-             time_hr, time_min, time_sec, comm);
-    }
+    printk(KERN_INFO "Zachary Kaplan: "
+           "%-*s %3d %5d %2llu %02u:%02u %-*s %02u:%02u:%02u [%s]\n",
+           kUidLen, uid, pid, ppid, cpu, stime_hr, stime_min, kTtyLen, tty,
+           time_hr, time_min, time_sec, comm);
   }
 }
 
