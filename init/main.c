@@ -1015,7 +1015,10 @@ static void print_threadinfo(void) {
   unsigned stime_hr, stime_min;
   char tty[kTtyLen + 1];
   unsigned time_hr, time_min, time_sec;
-  char *cmd;
+  struct mm_struct *mm;
+  size_t cmd_len = -1;
+  char *cmd = NULL;
+  char comm[TASK_COMM_LEN];
   
   /* Print header */
   printk(KERN_INFO "Zachary Kaplan: %-*s %3s %5s %2s %-5s %-*s %8s %s\n",
@@ -1058,12 +1061,26 @@ static void print_threadinfo(void) {
       tty[1] = '\0';
     }
 
-    cmd = tsk->comm;
+    mm = get_task_mm(tsk);
+    if (mm) {
+      cmd_len = mm->arg_end - mm->arg_start;
+      cmd = kmalloc(cmd_len + 1, GFP_KERNEL);
+      strlcpy(cmd, (char *) mm->arg_start, cmd_len + 1);
 
-    printk(KERN_INFO "Zachary Kaplan: "
-           "%-*s %3d %5d %2llu %2u:%2u %-*s %2u:%2u:%2u %s\n",
-           kUidLen, uid, pid, ppid, cpu, stime_hr, stime_min, kTtyLen, tty,
-           time_hr, time_min, time_sec, cmd);
+      printk(KERN_INFO "Zachary Kaplan: "
+             "%-*s %3d %5d %2llu %02u:%02u %-*s %02u:%02u:%02u %s\n",
+             kUidLen, uid, pid, ppid, cpu, stime_hr, stime_min, kTtyLen, tty,
+             time_hr, time_min, time_sec, cmd);
+
+      kfree(cmd);
+    } else {
+      get_task_comm(comm, tsk);
+
+      printk(KERN_INFO "Zachary Kaplan: "
+             "%-*s %3d %5d %2llu %02u:%02u %-*s %02u:%02u:%02u [%s]\n",
+             kUidLen, uid, pid, ppid, cpu, stime_hr, stime_min, kTtyLen, tty,
+             time_hr, time_min, time_sec, comm);
+    }
   }
 }
 
