@@ -1102,19 +1102,23 @@ static void print_threadinfo(void) {
   }
 
 /* Instances of the above macro */
-declare_my_kthread_do(task_1)
-declare_my_kthread_do(task_2)
+declare_my_kthread_do(task_1);
+declare_my_kthread_do(task_2);
 
 /*
  * CUSTOM EDIT FOR CS680
  * Dummy hotplugd tasks with dummy workloads.
  */
+DEFINE_PER_CPU(struct task_struct *, my_hotplugd);
+static int should_my_hotplugd_run(unsigned cpu) { return 1; }
 static void run_my_hotplugd(unsigned cpu) {
   printk(KERN_INFO "Zachary Kaplan: hotplugd is up on CPU %u.\n", cpu);
 }
 static struct smp_hotplug_thread my_hotplug_threads = {
-  .thread_fn = run_my_hotplugd,
-  .thread_comm = "ZK: hotplugd/%d",
+  .store              = &my_hotplugd,
+  .thread_should_run  = should_my_hotplugd_run,
+  .thread_fn          = run_my_hotplugd,
+  .thread_comm        = "ZK: hotplugd/%d",
 };
 static int __init spawn_my_hotplugd(void) {
   BUG_ON(smpboot_register_percpu_thread(&my_hotplug_threads));
