@@ -1076,10 +1076,10 @@ static void print_threadinfo(void) {
  * CUSTOM EDIT FOR CS680
  * Macro helper for creating some dummy threads.
  */
-#define my_kthread_create(function) ({                                    \
+#define my_kthread_create(function, data, clone) ({                       \
     pid_t mypid;                                                          \
     printk(KERN_INFO "Zachary Kaplan: Calling kthread(" #function ")\n"); \
-    mypid = kernel_thread((function), NULL, CLONE_FS);                    \
+    mypid = kernel_thread((function), data, clone);                       \
     printk(KERN_INFO "Zachary Kaplan: " #function " pid = %d\n", mypid);  \
     mypid;                                                                \
 })
@@ -1088,7 +1088,8 @@ static void print_threadinfo(void) {
  * Macros helper for constructing a dummy workload for dummy threads.
  */
 #define declare_my_kthread_do(task_name)                                  \
-  static int my_kthread_do_##task_name(void *unused) {                   \
+  static int my_kthread_do_##task_name(void *data) {                      \
+    struct completion *done = (struct completion *) data;                 \
     set_task_comm(current, "Zachary Kaplan: my_kthread_do_" #task_name);  \
     set_current_state(TASK_RUNNING);                                      \
     printk(KERN_INFO "Zachary Kaplan: my_kthread_do_" #task_name " is "   \
@@ -1096,6 +1097,7 @@ static void print_threadinfo(void) {
     schedule();                                                           \
     printk(KERN_INFO "Zachary Kaplan: my_kthread_do_" #task_name " has "  \
                      "been scheduled.\n");                                \
+    complete(done);                                                       \
     return 0;                                                             \
   }
 
@@ -1108,6 +1110,9 @@ static int __ref kernel_init(void *unused)
 	int ret;
   /* CUSTOM EDIT FOR 680 */
   pid_t mypid1, mypid2;
+  /* Completions for checking when dummy tasks have terminated */
+  DECLARE_COMPLETION_ONSTACK(task_1_done);
+  DECLARE_COMPLETION_ONSTACK(task_2_done);
 
 	kernel_init_freeable();
 	/* need to finish all async __init code before freeing the memory */
@@ -1137,18 +1142,16 @@ static int __ref kernel_init(void *unused)
   print_threadinfo();
 
   printk(KERN_INFO "Zachary Kaplan: my_kthread_do* are about to be created.\n");
-  mypid1 = my_kthread_create(my_kthread_do_task_1);
-  mypid2 = my_kthread_create(my_kthread_do_task_2);
+  mypid1 = my_kthread_create(my_kthread_do_task_1, &task_1_done, CLONE_FS);
+  mypid2 = my_kthread_create(my_kthread_do_task_2, &task_2_done, CLONE_FS);
   printk(KERN_INFO "Zachary Kaplan: my_kthread_do* have been created.\n");
 
   print_threadinfo();
 
-  /* NOTE: Even though these threads don't check should_kthread_stop(),
-           they always terminate unconditionally so should be fine. */
-  printk(KERN_INFO "Zachary Kaplan: waiting for my_kthread_do* to stop.\n");
-  kthread_stop(find_task_by_pid_ns(mypid1, &init_pid_ns));
-  kthread_stop(find_task_by_pid_ns(mypid2, &init_pid_ns));
-  printk(KERN_INFO "Zachary Kaplan: my_kthread_do* have stopped.\n");
+  printk(KERN_INFO "Zachary Kaplan: waiting for my_kthread_do* to complete.\n");
+  wait_for_completion(&task_1_done);
+  wait_for_completion(&task_2_done);
+  printk(KERN_INFO "Zachary Kaplan: my_kthread_do* have completed.\n");
 
   print_threadinfo();
 
