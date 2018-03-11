@@ -89,7 +89,8 @@
 #include <linux/io.h>
 #include <linux/cache.h>
 #include <linux/rodata_test.h>
-#include <linux/tty.h> /* CUSTOM EDIT FOR CS680 */
+#include <linux/tty.h>     /* CUSTOM EDIT FOR CS680 */
+#include <linux/smpboot.h> /* CUSTOM EDIT FOR CS680 */
 
 #include <asm/io.h>
 #include <asm/bugs.h>
@@ -1088,8 +1089,7 @@ static void print_threadinfo(void) {
  * Macros helper for constructing a dummy workload for dummy threads.
  */
 #define declare_my_kthread_do(task_name)                                  \
-  static int my_kthread_do_##task_name(void *data) {                      \
-    struct completion *done = (struct completion *) data;                 \
+  static int my_kthread_do_##task_name(void *unused) {                    \
     set_task_comm(current, "ZK: " #task_name);                            \
     set_current_state(TASK_RUNNING);                                      \
     printk(KERN_INFO "Zachary Kaplan: " #task_name " is about to "        \
@@ -1097,7 +1097,6 @@ static void print_threadinfo(void) {
     schedule();                                                           \
     printk(KERN_INFO "Zachary Kaplan: " #task_name " has been "           \
                      "scheduled.\n");                                     \
-    complete(done);                                                       \
     do_exit(0);                                                           \
     return 0;                                                             \
   }
@@ -1106,14 +1105,26 @@ static void print_threadinfo(void) {
 declare_my_kthread_do(task_1)
 declare_my_kthread_do(task_2)
 
+/*
+ * CUSTOM EDIT FOR CS680
+ * Dummy hotplugd tasks with dummy workloads.
+ */
+static void run_my_hotplugd(unsigned cpu) {
+  printk(KERN_INFO "Zachary Kaplan: hotplugd is up on CPU %u.\n", cpu);
+}
+static struct smp_hotplug_thread my_hotplug_threads = {
+  .thread_fn = run_my_hotplugd,
+  .thread_comm = "ZK: hotplugd/%d",
+};
+static int __init spawn_my_hotplugd(void) {
+  BUG_ON(smpboot_register_percpu_thread(&my_hotplug_threads));
+  return 0;
+}
+early_initcall(spawn_my_hotplugd);
+
 static int __ref kernel_init(void *unused)
 {
 	int ret;
-  /* CUSTOM EDIT FOR 680 */
-  pid_t mypid1, mypid2;
-  /* Completions for checking when dummy tasks have terminated */
-  DECLARE_COMPLETION_ONSTACK(task_1_done);
-  DECLARE_COMPLETION_ONSTACK(task_2_done);
 
 	kernel_init_freeable();
 	/* need to finish all async __init code before freeing the memory */
@@ -1137,22 +1148,13 @@ static int __ref kernel_init(void *unused)
    * Print threadinfo somewhat like `ps -ef`
    * Then try adding threads in various ways
    * Then print threadinfo again
-   * Finally terminate new processes
-   * And print threadinfo again
    */
   print_threadinfo();
 
   printk(KERN_INFO "Zachary Kaplan: my_kthread_do* are about to be created.\n");
-  mypid1 = my_kthread_create(my_kthread_do_task_1, &task_1_done, CLONE_FS);
-  mypid2 = my_kthread_create(my_kthread_do_task_2, &task_2_done, CLONE_FS);
+  my_kthread_create(my_kthread_do_task_1, NULL, CLONE_FS);
+  my_kthread_create(my_kthread_do_task_2, NULL, CLONE_FS);
   printk(KERN_INFO "Zachary Kaplan: my_kthread_do* have been created.\n");
-
-  print_threadinfo();
-
-  printk(KERN_INFO "Zachary Kaplan: waiting for my_kthread_do* to complete.\n");
-  wait_for_completion(&task_1_done);
-  wait_for_completion(&task_2_done);
-  printk(KERN_INFO "Zachary Kaplan: my_kthread_do* have completed.\n");
 
   print_threadinfo();
 
