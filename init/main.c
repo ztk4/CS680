@@ -1111,14 +1111,23 @@ declare_my_kthread_do(task_2);
  */
 DEFINE_PER_CPU(struct task_struct *, my_hotplugd);
 static int should_my_hotplugd_run(unsigned cpu) { return 1; }
-static void run_my_hotplugd(unsigned cpu) {
+static void my_hotplugd_create(unsigned cpu) {
   printk(KERN_INFO "Zachary Kaplan: hotplugd is up on CPU %u.\n", cpu);
+}
+static void run_my_hotplugd(unsigned cpu) {
+  printk(KERN_INFO "Zachary Kaplan: hotplugd is running on CPU %u.\n", cpu);
+
+  /* Go to sleep as to not spam with the above message too much */
+  /* NOTE: We must sleep or call schedule otherwise the calling while-loop
+           would effectively busy wait and hog a cpu */
+  ssleep(15);
 }
 static struct smp_hotplug_thread my_hotplug_threads = {
   .store              = &my_hotplugd,
+  .create             = my_hotplugd_create,
   .thread_should_run  = should_my_hotplugd_run,
   .thread_fn          = run_my_hotplugd,
-  .thread_comm        = "ZK: hotplugd/%d",
+  .thread_comm        = "ZK: hotplugd/%u",
 };
 static int __init spawn_my_hotplugd(void) {
   BUG_ON(smpboot_register_percpu_thread(&my_hotplug_threads));
