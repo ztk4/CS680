@@ -1090,14 +1090,15 @@ static void print_threadinfo(void) {
 #define declare_my_kthread_do(task_name)                                  \
   static int my_kthread_do_##task_name(void *data) {                      \
     struct completion *done = (struct completion *) data;                 \
-    set_task_comm(current, "Zachary Kaplan: my_kthread_do_" #task_name);  \
+    set_task_comm(current, "ZK: " #task_name);                            \
     set_current_state(TASK_RUNNING);                                      \
-    printk(KERN_INFO "Zachary Kaplan: my_kthread_do_" #task_name " is "   \
-                     "about to schedule.\n");                             \
+    printk(KERN_INFO "Zachary Kaplan: " #task_name " is about to "        \
+                     "schedule.\n");                                      \
     schedule();                                                           \
-    printk(KERN_INFO "Zachary Kaplan: my_kthread_do_" #task_name " has "  \
-                     "been scheduled.\n");                                \
+    printk(KERN_INFO "Zachary Kaplan: " #task_name " has been "           \
+                     "scheduled.\n");                                     \
     complete(done);                                                       \
+    do_exit(0);                                                           \
     return 0;                                                             \
   }
 
