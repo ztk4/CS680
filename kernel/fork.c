@@ -2089,7 +2089,7 @@ long _do_fork(unsigned long clone_flags,
      */
     if (count < 100) {
       ++count;
-      printk(KERN_INFO "Zachary Kaplan: Thread %d[%s] created\n",
+      printk(KERN_INFO "Zachary Kaplan: Thread %d created by [%s]\n",
              p->pid, p->comm);
     }
 
