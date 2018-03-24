@@ -3440,7 +3440,7 @@ asmlinkage __visible void __sched schedule(void)
   if (count < 100)
     printk(KERN_INFO
            "Zachary Kaplan: About to context switch from %d[%s] on CPU %u\n",
-           tsk->pid, tsk->comm, tsk->cpu);
+           tsk->pid, tsk->comm, task_cpu(tsk));
 	sched_submit_work(tsk);
 	do {
 		preempt_disable();
@@ -3454,7 +3454,7 @@ asmlinkage __visible void __sched schedule(void)
   if (count < 100) {
     ++count;
     printk(KERN_INFO "Zachary Kaplan: Context switched to %d[%s] on CPU %u\n",
-           tsk->pid, tsk->comm, tsk->cpu);
+           tsk->pid, tsk->comm, task_cpu(tsk));
   }
 }
 EXPORT_SYMBOL(schedule);
