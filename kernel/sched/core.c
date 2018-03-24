@@ -3427,13 +3427,35 @@ static inline void sched_submit_work(struct task_struct *tsk)
 asmlinkage __visible void __sched schedule(void)
 {
 	struct task_struct *tsk = current;
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Print limiting for context switches.
+   */
+  static int count = 0;
 
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Print before context switch.
+   */
+  if (count < 100)
+    printk(KERN_INFO
+           "Zachary Kaplan: About to context switch from %d[%s] on CPU %u\n",
+           tsk->pid, tsk->comm, tsk->cpu);
 	sched_submit_work(tsk);
 	do {
 		preempt_disable();
 		__schedule(false);
 		sched_preempt_enable_no_resched();
 	} while (need_resched());
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Print after context switch.
+   */
+  if (count < 100) {
+    ++count;
+    printk(KERN_INFO "Zachary Kaplan: Context switched to %d[%s] on CPU %u\n",
+           tsk->pid, tsk->comm, tsk->cpu);
+  }
 }
 EXPORT_SYMBOL(schedule);
 

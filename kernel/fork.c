@@ -2026,7 +2026,6 @@ long _do_fork(unsigned long clone_flags,
   /*
    * CUSTOM EDIT FOR CS680
    * Print the first 100ish threads created.
-   * This will not be a true count, but will impose a limit.
    */
   static int count = 0;
 
