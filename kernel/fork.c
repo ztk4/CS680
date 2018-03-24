@@ -2023,6 +2023,13 @@ long _do_fork(unsigned long clone_flags,
 	int trace = 0;
 	long nr;
 
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Print the first 100ish threads created.
+   * This will not be a true count, but will impose a limit.
+   */
+  static int count = 0;
+
 	/*
 	 * Determine whether and which event to report to ptracer.  When
 	 * called from kernel_thread or CLONE_UNTRACED is explicitly
@@ -2040,6 +2047,15 @@ long _do_fork(unsigned long clone_flags,
 		if (likely(!ptrace_event_enabled(current, trace)))
 			trace = 0;
 	}
+
+  /*
+   * CUSTOM EDIT FOR CS680
+   * Print before creation.
+   */
+  if (count < 100) {
+    ++count;
+    printk(KERN_INFO "Zachary Kaplan: About to create thread\n");
+  }
 
 	p = copy_process(clone_flags, stack_start, stack_size,
 			 child_tidptr, NULL, trace, tls, NUMA_NO_NODE);
@@ -2067,6 +2083,14 @@ long _do_fork(unsigned long clone_flags,
 		}
 
 		wake_up_new_task(p);
+
+    /*
+     * CUSTOM EDIT FOR CS680
+     * Print after creation.
+     */
+    if (count <= 100)
+      printk(KERN_INFO "Zachary Kaplan: Thread %d[%s] created\n",
+             p->pid, p->comm);
 
 		/* forking complete and child started to run, tell ptracer */
 		if (unlikely(trace))
