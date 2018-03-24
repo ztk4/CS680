@@ -2053,7 +2053,6 @@ long _do_fork(unsigned long clone_flags,
    * Print before creation.
    */
   if (count < 100) {
-    ++count;
     printk(KERN_INFO "Zachary Kaplan: About to create thread\n");
   }
 
@@ -2088,9 +2087,11 @@ long _do_fork(unsigned long clone_flags,
      * CUSTOM EDIT FOR CS680
      * Print after creation.
      */
-    if (count <= 100)
+    if (count < 100) {
+      ++count;
       printk(KERN_INFO "Zachary Kaplan: Thread %d[%s] created\n",
              p->pid, p->comm);
+    }
 
 		/* forking complete and child started to run, tell ptracer */
 		if (unlikely(trace))
