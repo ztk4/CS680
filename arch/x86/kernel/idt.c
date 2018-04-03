@@ -243,6 +243,30 @@ static void set_intr_gate(unsigned int n, const void *addr)
 	idt_setup_from_table(idt_table, &data, 1, false);
 }
 
+/* 
+ * CUSTOM EDIT FOR CS680
+ * C handler for divide error.
+ */
+void handle_divide_error(void) {
+  printk(KERN_INFO "Zachary Kaplan: custom C handler for divide error called\n");
+}
+EXPORT_SYMBOL(handle_divide_error); /* Export for assembly code */
+
+/*
+ * CUSTOM EDIT FOR CS680
+ * Extern for the custom assembly handler in the symbol table.
+ */
+extern void custom_divide_error(void);
+
+/*
+ * CUSTOM EDIT FOR CS680
+ * Replace IDT entry for divide error with custom assembly handler.
+ */
+void write_custom_de_to_idt(void) {
+  set_intr_gate(X86_TRAP_DE, custom_divide_error);
+}
+EXPORT_SYMBOL(write_custom_de_to_idt); /* Export for common kernel code */
+
 /**
  * idt_setup_early_traps - Initialize the idt table with early traps
  *
