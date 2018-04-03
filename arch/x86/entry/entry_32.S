@@ -781,7 +781,7 @@ END(divide_error)
    */
 .extern handle_divide_error
 ENTRY(custom_divide_error)
-  call *(handle_divide_error)  /* Call custom C handler */
+  call handle_divide_error     /* Call custom C handler */
   jmp divide_error             /* Defer back to usual handler */
 END(custom_divide_error)
 
