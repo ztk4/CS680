@@ -1098,8 +1098,8 @@ idtentry simd_coprocessor_error		do_simd_coprocessor_error	has_error_code=0
    * custom assembly handler for divide error.
    */
 ENTRY(custom_divide_error)
-  jmp handle_divide_error    /* Jump to custom C handler */
-  jmp divide_error           /* Defer back to usual handler */
+  callq handle_divide_error    /* Call custom C handler */
+  jmp divide_error             /* Defer back to usual handler */
 END(custom_divide_error)
 
 	/*

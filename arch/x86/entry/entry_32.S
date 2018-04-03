@@ -780,7 +780,7 @@ END(divide_error)
    * custom assembly handler for divide error.
    */
 ENTRY(custom_divide_error)
-  jmp handle_divide_error   /* Jump to custom C handler */
+  calll handle_divide_error /* Call custom C handler */
   jmp divide_error          /* Defer back to usual handler */
 END(custom_divide_error)
 
