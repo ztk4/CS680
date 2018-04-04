@@ -254,7 +254,7 @@ static void set_intr_gate(unsigned int n, const void *addr)
  * C handler for divide error.
  */
 __visible asmlinkage void handle_divide_error(void) {
-  /*printk(KERN_INFO "Zachary Kaplan: custom C handler for divide error called\n");*/
+  printk(KERN_INFO "Zachary Kaplan: custom C handler for divide error called\n");
 }
 EXPORT_SYMBOL(handle_divide_error); /* Export for assembly code */
 
