@@ -1112,8 +1112,8 @@ ENTRY(custom_divide_error)
 
   xorl %esi, %esi   /* no error code */
 
-  /* TODO: Custom Handler */
-  call do_divide_error  /* Defer to normal handler */
+  call handle_divide_error  /* Call custom handler */
+  call do_divide_error      /* Defer to normal handler */
 
   jmp error_exit
 END(custom_divide_error)
