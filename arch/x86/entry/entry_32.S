@@ -775,16 +775,6 @@ ENTRY(divide_error)
 	jmp	common_exception
 END(divide_error)
 
-  /*
-   * CUSTOM EDIT FOR CS680
-   * custom assembly handler for divide error.
-   */
-.extern handle_divide_error
-ENTRY(custom_divide_error)
-  call handle_divide_error     /* Call custom C handler */
-  jmp divide_error             /* Defer back to usual handler */
-END(custom_divide_error)
-
 #ifdef CONFIG_X86_MCE
 ENTRY(machine_check)
 	ASM_CLAC

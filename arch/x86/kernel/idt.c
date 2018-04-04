@@ -243,12 +243,18 @@ static void set_intr_gate(unsigned int n, const void *addr)
 	idt_setup_from_table(idt_table, &data, 1, false);
 }
 
+/*
+ * CUSTOM EDIT FOR CS680
+ * Only do this stuff if we are x86_64 (I didn't implement for 32 because I have
+ * no way of testing it).
+ */
+#ifdef CONFIG_X86_64
 /* 
  * CUSTOM EDIT FOR CS680
  * C handler for divide error.
  */
-asmlinkage void handle_divide_error(void) {
-  printk(KERN_INFO "Zachary Kaplan: custom C handler for divide error called\n");
+__visible asmlinkage void handle_divide_error(void) {
+  /*printk(KERN_INFO "Zachary Kaplan: custom C handler for divide error called\n");*/
 }
 EXPORT_SYMBOL(handle_divide_error); /* Export for assembly code */
 
@@ -271,6 +277,7 @@ void write_custom_de_to_idt(void) {
   write_idt_entry(idt_table, X86_TRAP_DE, &desc);
 }
 EXPORT_SYMBOL(write_custom_de_to_idt); /* Export for common kernel code */
+#endif /* CONFIG X86_64 */
 
 /**
  * idt_setup_early_traps - Initialize the idt table with early traps

@@ -1096,11 +1096,26 @@ idtentry simd_coprocessor_error		do_simd_coprocessor_error	has_error_code=0
   /*
    * CUSTOM EDIT FOR CS680
    * custom assembly handler for divide error.
+   * pieces pulled from above idtentry macro.
    */
 .extern handle_divide_error
 ENTRY(custom_divide_error)
-  call handle_divide_error     /* Call custom C handler */
-  jmp divide_error             /* Defer back to usual handler */
+  UNWIND_HINT_IRET_REGS offset=0
+  ASM_CLAC
+  ALLOC_PT_GPREGS_ON_STACK
+
+  /* Handles context switch and ensuring we're in the kernel, etc. */
+  call error_entry
+  UNWIND_HINT_REGS
+
+  movq %rsp, %rdi   /* pt_regs */
+
+  xorl %esi, %esi   /* no error code */
+
+  /* TODO: Custom Handler */
+  call do_divide_error  /* Defer to normal handler */
+
+  jmp error_exit
 END(custom_divide_error)
 
 	/*

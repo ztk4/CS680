@@ -1139,7 +1139,7 @@ early_initcall(spawn_my_hotplugd);
  * CUSTOM EDIT FOR CS680
  * Extern of symbol defined in arch/x86.
  */
-#ifdef CONFIG_X86
+#ifdef CONFIG_X86_64
 extern void write_custom_de_to_idt(void);
 #endif
 
@@ -1162,7 +1162,7 @@ static int __ref kernel_init(void *unused)
    * CUSTOM EDIT FOR CS680
    * Insert custom assembly handler for divide error into the IDT.
    */
-#ifdef CONFIG_X86
+#ifdef CONFIG_X86_64
   write_custom_de_to_idt();
 #endif
 
