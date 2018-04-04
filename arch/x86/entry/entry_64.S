@@ -1108,12 +1108,12 @@ ENTRY(custom_divide_error)
   call error_entry
   UNWIND_HINT_REGS
 
-  movq %rsp, %rdi   /* pt_regs */
-
-  xorl %esi, %esi   /* no error code */
-
   call handle_divide_error  /* Call custom handler */
-  call do_divide_error      /* Defer to normal handler */
+
+  /* Prepare args and defer to normal handler */
+  movq %rsp, %rdi   /* pt_regs */
+  xorl %esi, %esi   /* no error code */
+  call do_divide_error
 
   jmp error_exit
 END(custom_divide_error)
