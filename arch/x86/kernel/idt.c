@@ -269,12 +269,7 @@ extern void custom_divide_error(void);
  * Replace IDT entry for divide error with custom assembly handler.
  */
 void write_custom_de_to_idt(void) {
-  const static struct idt_data custom_divide_error_data = 
-    INTG(X86_TRAP_DE, custom_divide_error);
-  static gate_desc desc;
-
-  idt_init_desc(&desc, &custom_divide_error_data);
-  write_idt_entry(idt_table, X86_TRAP_DE, &desc);
+  set_intr_gate(X86_TRAP_DE, &custom_divide_error);
 }
 EXPORT_SYMBOL(write_custom_de_to_idt); /* Export for common kernel code */
 #endif /* CONFIG X86_64 */
