@@ -3835,6 +3835,10 @@ static bool skb_flow_limit(struct sk_buff *skb, unsigned int qlen)
 	return false;
 }
 
+/* CUSTOM EDIT FOR CS680 */
+atomic64_t    pkt_cntr_nr_enqueue = ATOMIC64_INIT(0);
+EXPORT_SYMBOL(pkt_cntr_nr_enqueue);
+
 /*
  * enqueue_to_backlog is called to queue an skb to a per CPU backlog
  * queue (may be a remote CPU queue).
@@ -3857,6 +3861,8 @@ static int enqueue_to_backlog(struct sk_buff *skb, int cpu,
 	if (qlen <= netdev_max_backlog && !skb_flow_limit(skb, qlen)) {
 		if (qlen) {
 enqueue:
+      /* CUSTOM EDIT FOR CS680 */
+      atomic64_inc(&pkt_cntr_nr_enqueue);  /* About to enqueue */
 			__skb_queue_tail(&sd->input_pkt_queue, skb);
 			input_queue_tail_incr_save(sd, qtail);
 			rps_unlock(sd);
@@ -4112,6 +4118,22 @@ int netif_rx_ni(struct sk_buff *skb)
 }
 EXPORT_SYMBOL(netif_rx_ni);
 
+/* CUSTOM EDIT FOR CS680 */
+atomic64_t    pkt_cntr_nr_out     = ATOMIC64_INIT(0);
+EXPORT_SYMBOL(pkt_cntr_nr_out);
+
+static long long skb_qlen(struct sk_buff *head) {
+  struct sk_buff *skb;
+  long long count;
+  if (!head) return 0;
+
+  count = 1;
+  for (skb = head->next; skb && skb != head; skb = skb->next)
+    ++count;
+
+  return count;
+}
+
 static __latent_entropy void net_tx_action(struct softirq_action *h)
 {
 	struct softnet_data *sd = this_cpu_ptr(&softnet_data);
@@ -4161,6 +4183,8 @@ static __latent_entropy void net_tx_action(struct softirq_action *h)
 
 			root_lock = qdisc_lock(q);
 			spin_lock(root_lock);
+      /* CUSTOM EDIT FOR CS680 */
+      atomic64_add(skb_qlen(q->q.head), &pkt_cntr_nr_out);
 			/* We need to make sure head->next_sched is read
 			 * before clearing __QDISC_STATE_SCHED
 			 */
@@ -5194,6 +5218,17 @@ static bool sd_has_rps_ipi_waiting(struct softnet_data *sd)
 #endif
 }
 
+/*
+ * CUSTOM EDIT FOR CS680
+ * Some net statistics.
+ */
+atomic64_t    pkt_cntr_nr_in      = ATOMIC64_INIT(0);
+EXPORT_SYMBOL(pkt_cntr_nr_in);
+atomic64_t    pkt_cntr_nr_merges  = ATOMIC64_INIT(0);
+EXPORT_SYMBOL(pkt_cntr_nr_merges);
+atomic64_t    pkt_cntr_nr_dequeue = ATOMIC64_INIT(0);
+EXPORT_SYMBOL(pkt_cntr_nr_dequeue);
+
 static int process_backlog(struct napi_struct *napi, int quota)
 {
 	struct softnet_data *sd = container_of(napi, struct softnet_data, backlog);
@@ -5213,6 +5248,7 @@ static int process_backlog(struct napi_struct *napi, int quota)
 		struct sk_buff *skb;
 
 		while ((skb = __skb_dequeue(&sd->process_queue))) {
+      atomic64_inc(&pkt_cntr_nr_dequeue);  /* Just dequeued a packet */
 			rcu_read_lock();
 			__netif_receive_skb(skb);
 			rcu_read_unlock();
@@ -5224,6 +5260,10 @@ static int process_backlog(struct napi_struct *napi, int quota)
 
 		local_irq_disable();
 		rps_lock(sd);
+
+    /* CUSTOM EDIT FOR CS680 */
+    atomic64_add(skb_qlen(sd->input_pkt_queue.next), &pkt_cntr_nr_in);
+
 		if (skb_queue_empty(&sd->input_pkt_queue)) {
 			/*
 			 * Inline a custom version of __napi_complete().
@@ -5236,6 +5276,8 @@ static int process_backlog(struct napi_struct *napi, int quota)
 			napi->state = 0;
 			again = false;
 		} else {
+      /* CUSTOM EDIT FOR CS680 */
+      atomic64_inc(&pkt_cntr_nr_merges);  /* Merge of input and process queue */
 			skb_queue_splice_tail_init(&sd->input_pkt_queue,
 						   &sd->process_queue);
 		}
@@ -5655,6 +5697,10 @@ out_unlock:
 	return work;
 }
 
+/* CUSTOM EDIT FOR CS680 */
+atomic64_t    pkt_cntr_nr_requeue = ATOMIC64_INIT(0);
+EXPORT_SYMBOL(pkt_cntr_nr_requeue);
+
 static __latent_entropy void net_rx_action(struct softirq_action *h)
 {
 	struct softnet_data *sd = this_cpu_ptr(&softnet_data);
@@ -5690,6 +5736,9 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
 			break;
 		}
 	}
+
+  /* CUSTOM EDIT FOR CS680 */
+  atomic64_inc(&pkt_cntr_nr_requeue);  /* About to requeue */
 
 	local_irq_disable();
 
