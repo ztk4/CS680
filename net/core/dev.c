@@ -4122,14 +4122,17 @@ EXPORT_SYMBOL(netif_rx_ni);
 atomic64_t    pkt_cntr_nr_out     = ATOMIC64_INIT(0);
 EXPORT_SYMBOL(pkt_cntr_nr_out);
 
-static long long skb_qlen(struct sk_buff *head) {
-  struct sk_buff *skb;
+static long long skb_qlen(const struct sk_buff_head *list) {
+  const struct sk_buff *skb;
   long long count;
-  if (!head) return 0;
+  if (skb_queue_empty(list)) return 0;
 
+  skb = skb_peek(list);
   count = 1;
-  for (skb = head->next; skb && skb != head; skb = skb->next)
+  while (!skb_queue_is_last(list, skb)) {
     ++count;
+    skb = skb_queue_next(list, skb);
+  }
 
   return count;
 }
@@ -4184,7 +4187,7 @@ static __latent_entropy void net_tx_action(struct softirq_action *h)
 			root_lock = qdisc_lock(q);
 			spin_lock(root_lock);
       /* CUSTOM EDIT FOR CS680 */
-      atomic64_add(skb_qlen(q->q.head), &pkt_cntr_nr_out);
+      // atomic64_add(skb_qlen((struct sk_buff_head *)q), &pkt_cntr_nr_out);
 			/* We need to make sure head->next_sched is read
 			 * before clearing __QDISC_STATE_SCHED
 			 */
@@ -5262,7 +5265,7 @@ static int process_backlog(struct napi_struct *napi, int quota)
 		rps_lock(sd);
 
     /* CUSTOM EDIT FOR CS680 */
-    atomic64_add(skb_qlen(sd->input_pkt_queue.next), &pkt_cntr_nr_in);
+    atomic64_add(skb_qlen(&sd->input_pkt_queue), &pkt_cntr_nr_in);
 
 		if (skb_queue_empty(&sd->input_pkt_queue)) {
 			/*
