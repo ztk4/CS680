@@ -4129,7 +4129,12 @@ static long long skb_qlen(const struct sk_buff_head *list) {
 
   skb = skb_peek(list);
   count = 1;
-  while (!skb_queue_is_last(list, skb)) {
+  /* NOTE: If list is a regular skb_buff_head, skb_queue_is_last will always
+   *       correctly determine the end of the list. However, if list is a
+   *       Qdisc::q where q is a qdisc_skb_head, tail->next == NULL not
+   *       list, so we check that skb is not null below to handle both
+   */
+  while (skb && !skb_queue_is_last(list, skb)) {
     ++count;
     skb = skb_queue_next(list, skb);
   }
@@ -4187,7 +4192,7 @@ static __latent_entropy void net_tx_action(struct softirq_action *h)
 			root_lock = qdisc_lock(q);
 			spin_lock(root_lock);
       /* CUSTOM EDIT FOR CS680 */
-      // atomic64_add(skb_qlen((struct sk_buff_head *)q), &pkt_cntr_nr_out);
+      atomic64_add(skb_qlen((struct sk_buff_head *)&q->q), &pkt_cntr_nr_out);
 			/* We need to make sure head->next_sched is read
 			 * before clearing __QDISC_STATE_SCHED
 			 */
